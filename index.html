@@ -1,1 +1,1307 @@
-this is playground to run sefgh engine code in browser. run python , vanilla js in-browser.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Tomato - Code Editor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* True-dark theme: black background for the main body */
+            @apply bg-black text-gray-200;
+        }
+
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000000; /* Black for scrollbar track */
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937; /* bg-gray-800 for scrollbar thumb */
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5; /* Tailwind indigo-600 */
+        }
+
+        .welcome-screen {
+            /* Consistent black background for welcome screen */
+            background-color: #000000; /* Match main body background */
+            color: #a0aec0; /* text-gray-400 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .welcome-screen h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #e2e8f0; /* text-gray-200 */
+        }
+
+        .welcome-screen p {
+            font-size: 1.125rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+
+        .default-background {
+            /* Consistent black background for default view */
+            background-color: #000000; /* Match main body background */
+            color: #a0aec0; /* text-gray-400 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .default-background .shortcut-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .default-background .shortcut-item .key-combo {
+            /* Darker background for key combos */
+            background-color: #111827; /* bg-gray-900 for key combos */
+            color: #e2e8f0; /* text-gray-200 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            margin-left: 0.5rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Modified drag-over style to apply to the whole nav */
+        #file-explorer-nav.drag-over {
+            border: 2px dashed #5a67d8; /* Tailwind indigo-600 */
+            background-color: #111827; /* Tailwind gray-900 */
+        }
+
+        /* Styles for file tabs horizontal scrolling */
+        #file-tabs-scroll-area {
+            overflow-x: auto;
+            white-space: nowrap; /* Prevent tabs from wrapping */
+        }
+
+        .file-tab {
+            flex-shrink: 0; /* Prevent tabs from shrinking */
+        }
+    </style>
+    <!-- Monaco Editor CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.29.1/min/vs/loader.js"></script>
+</head>
+
+<body class="flex flex-col h-screen overflow-hidden">
+
+    <!-- Top Bar (Window Controls & Search) -->
+    <header class="flex-shrink-0 bg-black border-b border-gray-700 p-2 flex items-center justify-between">
+        <!-- Left Menu Items and Navigation Arrows -->
+        <div class="flex items-center space-x-4 ml-2 text-sm">
+            <a href="https://v1.sefgh.org" target="_blank">
+                <img src="https://v1.sefgh.org/assets/favicon.png" class="w-6 h-6 rounded">
+            </a>
+            <!-- Changed text color to white and hover to indigo-400 for better visibility -->
+            <span class="cursor-pointer text-white hover:text-indigo-400">File</span>
+            <span class="cursor-pointer text-white hover:text-indigo-400">Edit</span>
+            <span class="cursor-pointer text-white hover:text-indigo-400">Selection</span>
+            <span class="cursor-pointer text-white hover:text-indigo-400">View</span>
+            <span class="cursor-pointer text-white hover:text-indigo-400">Go</span>
+            <span class="cursor-pointer text-white hover:text-indigo-400">Run</span>
+            <span class="cursor-pointer text-white hover:text-indigo-400">Terminal</span>
+            <span class="cursor-pointer text-white hover:text-indigo-400">Help</span>
+            <div class="flex space-x-2 ml-4">
+                <svg class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                <svg class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3">
+                    </path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Centered Search Bar -->
+        <div class="flex-grow flex justify-center">
+            <div class="relative w-1/3 max-w-md">
+                <input type="text" placeholder="focus-tomato" class="w-full bg-gray-900 text-gray-200 rounded-md py-1 px-3 pl-8 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <svg class="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Right Icons (Layout and Settings) -->
+        <div class="flex space-x-2 mr-2">
+            <!-- Layout Icon 1 (Single Panel) -->
+            <svg class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" fill="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke="currentColor" stroke-width="2"
+                    fill="none" />
+                <rect x="4" y="4" width="8" height="16" rx="0" ry="0" fill="currentColor" />
+            </svg>
+            <!-- Layout Icon 2 (Two Vertical Panels) -->
+            <svg class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" fill="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke="currentColor" stroke-width="2"
+                    fill="none" />
+                <line x1="12" y1="4" x2="12" y2="20" stroke="currentColor" stroke-width="2" />
+                <rect x="4" y="4" width="8" height="16" rx="0" ry="0" fill="currentColor" />
+            </svg>
+            <!-- Layout Icon 3 (Two Horizontal Panels) -->
+            <svg class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" fill="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke="currentColor" stroke-width="2"
+                    fill="none" />
+                <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" />
+                <rect x="4" y="4" width="16" height="8" rx="0" ry="0" fill="currentColor" />
+            </svg>
+            <!-- Settings Icon (Gear) -->
+            <svg class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.568.356 1.32.536 2.07.536z">
+                </path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-grow overflow-hidden">
+
+        <!-- Left Sidebar (File Explorer) -->
+        <aside class="flex-shrink-0 w-64 bg-black border-r border-gray-700 flex flex-col">
+            <div
+                class="p-4 text-sm font-semibold text-gray-400 border-b border-gray-700 flex items-center justify-between">
+                <div class="flex items-center space-x-3"> <!-- Added space-x-3 here for spacing -->
+                    <!-- Explorer Icon (New) - changed bg-gray-800 to bg-gray-900 -->
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white bg-gray-900 rounded p-1">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M6 6.878V6a2.25 2.25 0 0 1 2.25-2.25h7.5A2.25 2.25 0 0 1 18 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 0 0 4.5 9v.878m13.5-3A2.25 2.25 0 0 1 19.5 9v.878m0 0a2.246 2.246 0 0 0-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0 1 21 12v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6c0-.98.626-1.813 1.5-2.122" />
+                    </svg>
+                    <!-- Search Icon (New) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                    <!-- Git Icon (New) -->
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                        class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white">
+                        <path
+                            d="M21.007 8.222A3.738 3.738 0 0 0 15.045 5.2a3.737 3.737 0 0 0 1.156 6.583 2.988 2.988 0 0 1-2.668 1.67h-2.99a4.456 4.456 0 0 0-2.989 1.165V7.4a3.737 3.737 0 1 0-1.494 0v9.117a3.776 3.776 0 1 0 1.816.099 2.99 2.99 0 0 1 2.668-1.667h2.99a4.484 4.484 0 0 0 4.223-3.039 3.736 3.736 0 0 0 3.25-3.687zM4.565 3.738a2.242 2.242 0 1 1 4.484 0 2.242 2.242 0 0 1-4.484 0zm4.484 16.441a2.242 2.242 0 1 1-4.484 0 2.242 2.242 0 0 1 4.484 0zm8.221-9.715a2.242 2.242 0 1 1 0-4.485 2.242 2.242 0 0 1 0 4.485z">
+                        </path>
+                    </svg>
+                    <!-- Extensions Icon (New) -->
+                    <svg fill="currentColor" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white">
+                        <path
+                            d="M23.56.436c-.58-.58-1.54-.58-2.12 0L15.436 6.44c-.58.58-.58 1.54 0 2.12l6.004 6.005c.58.58 1.54.58 2.12 0l6.005-6.004c.58-.58.58-1.54 0-2.12L23.56.436zm-.706.708l6.003 6.003c.202.202.202.505 0 .707l-6.003 6.004c-.202.202-.505.202-.707 0l-6.004-6.004c-.202-.202-.202-.505 0-.707l6.004-6.003c.202-.202.505-.202.707 0zM16.5 18c-.822 0-1.5.678-1.5 1.5v9c0 .822.678 1.5 1.5 1.5h9c.822 0 1.5-.678 1.5-1.5v-9c0-.822-.678-1.5-1.5-1.5h-9zm0 1h9c.286 0 .5.214.5.5v9c0 .286-.214.5-.5.5h-9c-.286 0-.5-.214-.5-.5v-9c0-.286.214-.5.5-.5zM1.5 3C.678 3 0 3.678 0 4.5v9c0 .822.678 1.5 1.5 1.5h9c.822 0 1.5-.678 1.5-1.5v-9c0-.822-.678-1.5-1.5-1.5h-9zm0 1h9c.286 0 .5.214.5.5v9c0 .286-.214.5-.5.5h-9c-.286 0-.5-.214-.5-.5v-9c0-.286.214-.5.5-.5zm0 14c-.822 0-1.5.678-1.5 1.5v9c0 .822.678 1.5 1.5 1.5h9c.822 0 1.5-.678 1.5-1.5v-9c0-.822-.678-1.5-1.5-1.5h-9zm0 1h9c.286 0 .5.214.5.5v9c0 .286-.214.5-.5.5h-9c-.286 0-.5-.214-.5-.5v-9c0-.286.214-.5.5-.5z">
+                        </path>
+                    </svg>
+                </div>
+                <svg class="w-4 h-4 mr-1 text-gray-500 cursor-pointer hover:text-white" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </div>
+            
+            <!-- files and folder Explorer nav bar -->
+            <nav id="file-explorer-nav" class="flex-grow p-2 text-sm overflow-y-auto bg-black">
+                <div id="project-root-header">
+                    <div class="flex items-center text-gray-200 p-1 rounded-md font-semibold cursor-pointer">
+                        <svg id="project-toggle-arrow" class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <span class="flex-grow">PROJECT</span>
+                        <div class="flex items-center space-x-2">
+                            <!-- Add Folder Icon -->
+                            <svg class="w-4 h-4 text-gray-400 cursor-pointer hover:text-white add-folder-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
+                            <!-- Add File Icon - changed fill to currentColor -->
+                            <svg class="w-4 h-4 text-gray-400 cursor-pointer hover:text-white add-file-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" d="M14,2 C14.2652165,2 14.5195704,2.10535684 14.7071068,2.29289322 L19.7071068,7.29289322 C19.8946432,7.4804296 20,7.73478351 20,8 L20,9 C20,9.55228475 19.5522847,10 19,10 L13,10 C12.4871642,10 12.0644928,9.61395981 12.0067277,9.11662113 L12,9 L11.999,4 L7,4 C6.44771525,4 6,4.44771525 6,5 L6,19 C6,19.5522847 6.44771525,20 7,20 L9,20 C9.55228475,20 10,20.4477153 10,21 C10,21.5522847 9.55228475,22 9,22 L7,22 C5.34314575,22 4,20.6568542 4,19 L4,5 C4,3.34314575 5.34314575,2 7,2 L14,2 Z M17,12 C17.5522847,12 18,12.4477153 18,13 L18,16 L21,16 C21.5522847,16 22,16.4477153 22,17 C22,17.5522847 21.5522847,18 21,18 L18,18 L18,21 C18,21.5522847 17.5522847,22 17,22 C16.4477153,22 16,21.5522847 16,21 L16,18 L13,18 C12.4477153,18 12,17.5522847 12,17 C12,16.4477153 12.4477153,16 13,16 L16,16 L16,13 C16,12.4477153 16.4477153,12 17,12 Z M13.999,4.414 L14,8 L17.586,8 L13.999,4.414 Z"></path> </g></svg>
+                            <!-- Delete Icon -->
+                            <svg class="w-4 h-4 text-gray-400 cursor-pointer hover:text-white delete-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </div>
+                    </div>
+                    <ul id="file-tree" class="ml-4 mt-1 space-y-1">
+                        <!-- Dynamic file tree will be rendered here -->
+                    </ul>
+                </div>
+                <!-- Removed the separate drop-zone div -->
+            </nav>
+
+            <!-- Bottom of Left Sidebar (Outline) -->
+            <div class="flex-shrink-0 border-t border-gray-700">
+                <div
+                    class="p-4 text-sm font-semibold text-gray-400 border-b border-gray-700 flex items-center justify-between cursor-pointer hover:bg-gray-900 rounded-b-md">
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                        OUTLINE
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Middle Section (Code Editor & Terminal) -->
+        <main class="flex-grow flex flex-col bg-black overflow-hidden">
+            <!-- Tabs for open files -->
+            <div id="file-tabs-container" class="flex-shrink-0 flex bg-black border-b border-gray-700 text-sm">
+                <!-- This inner div will contain the actual scrollable tabs -->
+                <div id="file-tabs-scroll-area" class="flex flex-grow overflow-x-auto whitespace-nowrap">
+                    <!-- Tabs will be dynamically added here -->
+                </div>
+                <!-- Run Code Button -->
+                <button id="run-code-button" class="flex-shrink-0 bg-gray-900 text-gray-200 px-3 py-1 rounded-md hover:bg-gray-800 ml-auto mr-2">
+                    Run Code
+                </button>
+                <!-- Split View Button -->
+                <button id="split-view-button" class="flex-shrink-0 bg-gray-900 text-gray-200 px-3 py-1 rounded-md hover:bg-gray-800 mr-2">
+                    Split View
+                </button>
+            </div>
+
+            <!-- Editor/Welcome/Default Area - This will be the flex-grow item -->
+            <div id="editor-content-area" class="flex-grow relative">
+                <div id="monaco-editor-container" class="w-full h-full"></div>
+                <div id="welcome-screen" class="absolute inset-0 welcome-screen hidden">
+                    <h1>Welcome to SEFGH-AI Playground.</h1>
+                    <p>Your in-browser lab for search engine experimentation. No installs. No setup. Just pure, hands-on innovation.</p>
+                    <button id="close-welcome-screen" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Close Welcome Screen</button>
+                </div>
+                <div id="default-background-image" class="absolute inset-0 default-background hidden">
+                    <div class="flex flex-col items-start text-left">
+                        <div class="shortcut-item">
+                            <span>Show All Commands</span>
+                            <span class="key-combo">Ctrl <span class="text-gray-400">+</span> Shift <span class="text-gray-400">+</span> P</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span>Open File</span>
+                            <span class="key-combo">Ctrl <span class="text-gray-400">+</span> O</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span>Open Folder</span>
+                            <span class="key-combo">Ctrl <span class="text-gray-400">+</span> K</span>
+                            <span class="key-combo">Ctrl <span class="text-gray-400">+</span> O</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span>Open Recent</span>
+                            <span class="key-combo">Ctrl <span class="text-gray-400">+</span> R</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal/Output Area -->
+            <div id="bottom-panel-container"
+                class="flex-shrink-0 h-48 bg-black border-t border-gray-700 flex flex-col hidden"> <!-- Added 'hidden' class here -->
+                <div id="terminal-tabs-container"
+                    class="flex-shrink-0 flex items-center p-2 text-sm border-b border-gray-700">
+                    <!-- Changed active tab background to gray-900 -->
+                    <div class="px-3 py-1 rounded-t-md bg-gray-900 text-gray-200 mr-2 cursor-pointer">Terminal</div>
+                    <!-- Changed hover background to gray-900 -->
+                    <div class="px-3 py-1 rounded-t-md text-gray-400 hover:bg-gray-900 mr-2 cursor-pointer">Output</div>
+                    <!-- Changed hover background to gray-900 -->
+                    <div class="px-3 py-1 rounded-t-md text-gray-400 hover:bg-gray-900 mr-2 cursor-pointer">
+                        <span>Packages</span>
+                    </div>
+                    <!-- Minus icon for hiding the panel, always on the far right of this container -->
+                    <div id="minus-icon-container" class="ml-auto cursor-pointer hover:text-white">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                        </svg>
+                    </div>
+                </div>
+                <!-- Content for Terminal, Output, Packages -->
+                <div id="terminal-output-packages-content" class="flex-grow flex flex-col h-full"> <!-- Added h-full here -->
+                    <!-- Terminal Content - removed flex-grow, added h-full -->
+                    <div id="terminal-content" class="h-full p-2 text-xs text-gray-400 overflow-y-auto font-mono">
+                        <p><span class="text-green-400">√</span>
+                            <span class="text-gray-200">/Users/chandrus/zshrc22: no such file or directory:
+                                /Users/chandrus/.zshrc</span>
+                        </p>
+                        <p><span class="text-green-400">√</span>
+                            <span class="text-gray-200">chandrus@chandrus-MacBook-Air focus-tomato %</span>
+                            <span class="text-gray-200">|</span></p>
+                    </div>
+
+                    <!-- Output Content (Initially Hidden) - removed flex-grow, added h-full -->
+                    <div id="output-content"
+                        class="hidden h-full p-2 text-xs text-gray-400 overflow-y-auto font-mono">
+                        <p>Output messages will appear here.</p>
+                    </div>
+
+                    <!-- Packages Content (Initially Hidden) - removed flex-grow, added h-full -->
+                    <div id="packages-content" class="hidden h-full p-4 text-sm overflow-y-auto">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="relative flex-grow mr-4">
+                                <input type="text" placeholder="Search packages..." class="w-full bg-gray-900 text-gray-200 rounded-md py-1 px-3 pl-8 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <svg class="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.568.356 1.32.536 2.07.536z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <button class="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700">Add Package</button>
+                                <svg class="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Installed Packages -->
+                        <div class="mb-4">
+                            <!-- Changed hover background to gray-900 -->
+                            <div
+                                class="flex items-center text-gray-200 hover:bg-gray-900 p-1 rounded-md cursor-pointer">
+                                <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                                Installed
+                            </div>
+                        </div>
+
+                        <!-- PyPI Packages -->
+                        <div>
+                            <!-- Changed hover background to gray-900 -->
+                            <div
+                                class="flex items-center text-gray-200 hover:bg-gray-900 p-1 rounded-md cursor-pointer">
+                                <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                                PyPI
+                            </div>
+                            <ul class="ml-4 mt-1 space-y-1">
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>urllib3</span>
+                                    <span><span class="text-indigo-400">2.3.0</span> &rarr;
+                                    <span class="text-indigo-400">2.5.0</span></span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>six</span>
+                                    <span>1.17.0</span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>botocore</span>
+                                    <span><span class="text-indigo-400">68.2.0</span> &rarr;
+                                    <span class="text-indigo-400">80.9.0</span></span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>setuptools</span>
+                                    <span><span class="text-indigo-400">2.32.3</span> &rarr;
+                                    <span class="text-indigo-400">2.32.4</span></span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>requests</span>
+                                    <span><span class="text-indigo-400">2025.1.31</span> &rarr;
+                                    <span class="text-indigo-400">2025.6.1</span></span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>certifi</span>
+                                    <span>3.10</span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>idna</span>
+                                    <span>2.9.0.post0</span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>python-dateutil</span>
+                                    <span>6.0.2</span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>s3transfer</span>
+                                    <span><span class="text-indigo-400">23.2.1</span> &rarr;
+                                    <span class="text-indigo-400">25.1.1</span></span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>chardet</span>
+                                    <span></span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>PyYAML</span>
+                                    <span></span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>pip</span>
+                                    <span></span>
+                                </li>
+                                <!-- Changed hover background to gray-900 -->
+                                <li
+                                    class="flex justify-between items-center text-gray-400 hover:bg-gray-900 p-1 rounded-md">
+                                    <span>boto3</span>
+                                    <span></span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar (Chat) -->
+        <aside id="chat-sidebar" class="flex-shrink-0 w-64 bg-black border-l border-gray-700 flex flex-col hidden">
+            <div class="p-4 text-sm font-semibold text-gray-400 border-b border-gray-700">Chat</div>
+            <div class="flex-grow p-4 text-sm overflow-y-auto">
+                <p class="text-gray-400 mb-4">Plan, search, build anything...</p>
+                <!-- Chat messages placeholder -->
+                <div class="flex items-start mb-4">
+                    <div
+                        class="flex-shrink-0 w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xs mr-2">
+                        AI</div>
+                    <div class="bg-gray-900 p-2 rounded-lg text-gray-200">
+                        <p>Hello! How can I help you today?</p>
+                    </div>
+                </div>
+                <div class="flex items-start justify-end mb-4">
+                    <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                        <p>Can you help me with this code?</p>
+                    </div>
+                    <div
+                        class="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs ml-2">
+                        You</div>
+                </div>
+            </div>
+            <div class="flex-shrink-0 p-4 border-t border-gray-700 flex items-center">
+                <input type="text" placeholder="Message Agent AI..." class="flex-grow bg-gray-900 text-gray-200 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <button class="ml-2 bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                </button>
+            </div>
+            <div
+                class="flex-shrink-0 p-2 bg-black border-t border-gray-700 text-xs text-gray-400 flex justify-between items-center">
+                <span>Past chats</span>
+                <a href="#" class="text-indigo-400 hover:underline">8d ago</a>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <footer
+        class="flex-shrink-0 bg-black border-t border-gray-700 p-2 flex items-center justify-between text-xs text-gray-400">
+        <div class="flex items-center space-x-4 ml-2">
+            <!-- Selected file name will be displayed here -->
+            <span id="selected-file-name">No file selected</span>
+        </div>
+        <div class="flex items-center space-x-4 mr-2">
+            <span id="line-col-display">Ln 1, Col 1</span>
+            <span>Spaces: 2</span>
+            <span>UTF-8</span>
+            <span>LF</span>
+            <span>SEFGH-AI</span>
+            <!-- Notification Icon -->
+            <svg class="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                </path>
+            </svg>
+            <!-- Terminal toggle icon in bottom nav bar -->
+            <div id="terminal-bottom-bar-icon" class="cursor-pointer hover:text-white">
+                <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                    <g id="System / Terminal">
+                            <path id="Vector"
+                                d="M17 15H12M7 10L10 12.5L7 15M3 15.8002V8.2002C3 7.08009 3 6.51962 3.21799 6.0918C3.40973 5.71547 3.71547 5.40973 4.0918 5.21799C4.51962 5 5.08009 5 6.2002 5H17.8002C18.9203 5 19.4796 5 19.9074 5.21799C20.2837 5.40973 20.5905 5.71547 20.7822 6.0918C21 6.5192 21 7.07899 21 8.19691V15.8031C21 16.921 21 17.48 20.7822 17.9074C20.5905 18.2837 20.2837 18.5905 19.9074 18.7822C19.48 19 18.921 19 17.8031 19H6.19691C5.07899 19 4.5192 19 4.0918 18.7822C3.71547 18.5905 3.40973 18.2837 3.21799 17.9074C3 17.4796 3 16.9203 3 15.8002Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            </path>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <span id="ai-icon" class="cursor-pointer hover:text-white">
+                <!-- AI Icon -->
+                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-13h4c.55 0 1 .45 1 1s-.45 1-1 1h-4c-.55 0-1-.45-1-1s.45-1 1-1zm0 4h4c.55 0 1 .45 1 1s-.45 1-1 1h-4c-.55 0-1-.45-1-1s.45-1 1-1zm0 4h4c.55 0 1 .45 1 1s-.45 1-1 1h-4c-.55 0-1-.45-1-1s.45-1 1-1z"/>
+                </svg>
+            </span>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectedFileNameSpan = document.getElementById('selected-file-name');
+            const fileTreeContainer = document.getElementById('file-tree');
+            const addFolderIcon = document.querySelector('.add-folder-icon');
+            const addFileIcon = document.querySelector('.add-file-icon');
+            const deleteItemIcon = document.querySelector('.delete-item-icon');
+            const projectRootHeader = document.getElementById('project-root-header');
+            const projectToggleArrow = document.getElementById('project-toggle-arrow');
+            const fileTabsContainer = document.getElementById('file-tabs-container');
+            const fileTabsScrollArea = document.getElementById('file-tabs-scroll-area'); // New scroll area for tabs
+            const monacoEditorContainer = document.getElementById('monaco-editor-container');
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const defaultBackgroundImage = document.getElementById('default-background-image');
+            const closeWelcomeScreenButton = document.getElementById('close-welcome-screen');
+            const fileExplorerNav = document.getElementById('file-explorer-nav');
+
+            // Declare lineColDisplay at a higher scope
+            let lineColDisplay = document.getElementById('line-col-display');
+
+            let selectedItem = null;
+            let activeFileId = null;
+
+            let fileSystem = [];
+            let openFiles = [];
+
+            // Define the welcome file as a static object for tab management
+            const welcomeFile = {
+                id: 'welcome-screen-tab', // Unique ID for the welcome tab
+                name: 'Welcome',
+                type: 'file', // Still treated as a file for tab purposes
+                isWelcome: true // Custom property to identify it
+            };
+
+            const generateUniqueId = () => '_' + Math.random().toString(36).substr(2, 9);
+
+            // Function to get SVG icon based on file extension
+            const getFileIconSvg = (fileName) => {
+                const extension = String(fileName).split('.').pop().toLowerCase();
+                switch (extension) {
+                    case 'js':
+                        return '<svg class="w-4 h-4 mr-1 text-yellow-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z"/><path d="M12 17.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z" fill="#F7DF1E"/><path d="M12 12.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5-.5.22-.5.5.22.5.5.5z" fill="#212121"/></svg>'; // JS icon
+                    case 'ts':
+                        return '<svg class="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z"/><path d="M12 17.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z" fill="#007ACC"/><path d="M12 12.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5-.5.22-.5.5.22.5.5.5z" fill="#FFFFFF"/></svg>'; // TS icon
+                    case 'html':
+                        return '<svg class="w-4 h-4 mr-1 text-orange-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z"/><path d="M17.5 12L14 8.5V10H10V14H14V15.5L17.5 12z" fill="#E44D26"/></svg>'; // HTML icon
+                    case 'css':
+                        return '<svg class="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z"/><path d="M17.5 12L14 8.5V10H10V14H14V15.5L17.5 12z" fill="#264DE4"/></svg>'; // CSS icon
+                    case 'py':
+                        return '<svg class="w-4 h-4 mr-1 text-blue-700" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z"/><path d="M12 17.5l-5.5-3.5v-4L12 6.5l5.5 3.5v4L12 17.5z" fill="#306998"/><path d="M12 17.5L6.5 14V10L12 6.5l5.5 3.5v4L12 17.5z" fill="#FFD43B"/></svg>'; // Python icon
+                    case 'md':
+                        return '<svg class="w-4 h-4 mr-1 text-gray-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z"/><path d="M14 6H10V18H14V6zM10 10H8V14H10V10zM16 10H14V14H16V10z" fill="#FFFFFF"/></svg>'; // Markdown icon
+                    case 'json':
+                        return '<svg class="w-4 h-4 mr-1 text-purple-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z"/><path d="M12 17.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z" fill="#A020F0"/><circle cx="12" cy="12" r="1.5" fill="#FFFFFF"/></svg>'; // JSON icon
+                    default:
+                        return '<svg class="w-4 h-4 mr-1 text-gray-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" d="M14,2 C14.2652165,2 14.5195704,2.10535684 14.7071068,2.29289322 L19.7071068,7.29289322 C19.8946432,7.4804296 20,7.73478351 20,8 L20,9 C20,9.55228475 19.5522847,10 19,10 L13,10 C12.4871642,10 12.0644928,9.61395981 12.0067277,9.11662113 L12,9 L11.999,4 L7,4 C6.44771525,4 6,4.44771525 6,5 L6,19 C6,19.5522847 6.44771525,20 7,20 L9,20 C9.55228475,20 10,20.4477153 10,21 C10,21.5522847 9.55228475,22 9,22 L7,22 C5.34314575,22 4,20.6568542 4,19 L4,5 C4,3.34314575 5.34314575,2 7,2 L14,2 Z M17,12 C17.5522847,12 18,12.4477153 18,13 L18,16 L21,16 C21.5522847,16 22,16.4477153 22,17 C22,17.5522847 21.5522847,18 21,18 L18,18 L18,21 C18,21.5522847 17.5522847,22 17,22 C16.4477153,22 16,21.5522847 16,21 L16,18 L13,18 C12.4477153,18 12,17.5522847 12,17 C12,16.4477153 12.4477153,16 13,16 L16,16 L16,13 C16,12.4477153 16.4477153,12 17,12 Z M13.999,4.414 L14,8 L17.586,8 L13.999,4.414 Z"></path> </g>'; // Default file icon
+                }
+            };
+
+            const renderFileTree = (items, parentElement) => {
+                parentElement.innerHTML = '';
+
+                items.forEach(item => {
+                    const li = document.createElement('li');
+                    li.dataset.id = item.id;
+                    li.dataset.type = item.type;
+                    // Changed hover background to gray-900
+                    li.classList.add('p-1', 'rounded-md', 'cursor-pointer', 'hover:bg-gray-900'); 
+
+                    let itemContent = document.createElement('div');
+                    itemContent.classList.add('flex', 'items-center');
+
+                    if (item.type === 'folder') {
+                        const arrowIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                        arrowIcon.classList.add('w-4', 'h-4', 'mr-1', 'text-gray-400', 'folder-toggle-icon');
+                        arrowIcon.setAttribute('fill', 'none');
+                        arrowIcon.setAttribute('stroke', 'currentColor');
+                        arrowIcon.setAttribute('viewBox', '0 0 24 24');
+                        if (item.isExpanded) {
+                            arrowIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>';
+                        } else {
+                            arrowIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>';
+                        }
+                        arrowIcon.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            toggleFolder(item.id);
+                        });
+
+                        const folderIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                        folderIcon.classList.add('w-4', 'h-4', 'mr-1', 'text-gray-400');
+                        folderIcon.setAttribute('fill', 'none');
+                        folderIcon.setAttribute('stroke', 'currentColor');
+                        folderIcon.setAttribute('viewBox', '0 0 24 24');
+                        folderIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>';
+
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = item.name;
+                        nameSpan.classList.add('flex-grow');
+
+                        itemContent.append(arrowIcon, folderIcon, nameSpan);
+                        li.appendChild(itemContent);
+
+                        if (item.isExpanded && item.children) {
+                            const ul = document.createElement('ul');
+                            ul.classList.add('ml-4', 'mt-1', 'space-y-1', 'w-full');
+                            li.appendChild(ul);
+                            renderFileTree(item.children, ul);
+                        }
+                    } else { // type === 'file'
+                        // Use the getFileIconSvg function for file icons
+                        const fileIconContainer = document.createElement('div');
+                        fileIconContainer.innerHTML = getFileIconSvg(item.name);
+
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = item.name;
+                        nameSpan.classList.add('flex-grow');
+
+                        itemContent.append(fileIconContainer.firstChild, nameSpan); // Append the actual SVG element
+                        li.appendChild(itemContent);
+                    }
+
+                    li.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectItem(item.id);
+                        if (item.type === 'file') {
+                            openFileInEditor(item.id);
+                        }
+                    });
+
+                    parentElement.appendChild(li);
+                });
+            };
+
+            const findItemById = (id, items = fileSystem) => {
+                if (id === welcomeFile.id) {
+                    return welcomeFile;
+                }
+                for (const item of items) {
+                    if (item.id === id) {
+                        return item;
+                    }
+                    if (item.type === 'folder' && item.children) {
+                        const found = findItemById(id, item.children);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+
+            const findParentAndIndex = (id, items = fileSystem, parent = null) => {
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].id === id) {
+                        return { parent, index: i, item: items[i] };
+                    }
+                    if (items[i].type === 'folder' && items[i].children) {
+                        const found = findParentAndIndex(id, items[i].children, items[i]);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+
+            const selectItem = (id) => {
+                // Changed selector to gray-900 for consistency
+                const currentSelected = document.querySelector('#file-tree .bg-gray-900'); 
+                if (currentSelected) {
+                    currentSelected.classList.remove('bg-gray-900', 'text-indigo-400', 'font-semibold'); 
+                    currentSelected.classList.add('text-gray-400');
+                }
+
+                const newItemElement = document.querySelector(`[data-id="${id}"]`);
+                if (newItemElement) {
+                    // Changed class to gray-900 for consistency
+                    newItemElement.classList.add('bg-gray-900', 'text-indigo-400', 'font-semibold'); 
+                    newItemElement.classList.remove('text-gray-400');
+                    selectedItem = findItemById(id);
+                    selectedFileNameSpan.textContent = selectedItem.name;
+                } else {
+                    selectedItem = null;
+                    selectedFileNameSpan.textContent = 'No file selected';
+                }
+            };
+
+            const addFolder = (folderName = 'New Folder') => {
+                const newFolder = {
+                    id: generateUniqueId(),
+                    name: folderName,
+                    type: 'folder',
+                    children: [],
+                    isExpanded: false
+                };
+                if (selectedItem && selectedItem.type === 'folder') {
+                    selectedItem.children.push(newFolder);
+                    selectedItem.isExpanded = true;
+                } else {
+                    fileSystem.push(newFolder);
+                }
+                renderFileTree(fileSystem, fileTreeContainer);
+                selectItem(newFolder.id);
+                startRename(newFolder.id);
+            };
+
+            const addFile = (fileName = 'New File.txt', fileContent = '') => { // Default parameters added
+                const newFile = {
+                    id: generateUniqueId(),
+                    name: fileName,
+                    type: 'file',
+                    content: fileContent
+                };
+                if (selectedItem && selectedItem.type === 'folder') {
+                    selectedItem.children.push(newFile);
+                    selectedItem.isExpanded = true;
+                } else {
+                    fileSystem.push(newFile);
+                }
+                renderFileTree(fileSystem, fileTreeContainer);
+                selectItem(newFile.id);
+                openFileInEditor(newFile.id);
+                startRename(newFile.id);
+            };
+
+            const deleteItem = () => {
+                if (!selectedItem || selectedItem.isWelcome) return;
+
+                const { parent, index } = findParentAndIndex(selectedItem.id);
+
+                if (parent) {
+                    parent.children.splice(index, 1);
+                } else {
+                    fileSystem.splice(index, 1);
+                }
+
+                const tabElement = document.querySelector(`.file-tab[data-id="${selectedItem.id}"]`);
+                if (tabElement) {
+                    closeFileTab(selectedItem.id);
+                }
+
+                selectedItem = null;
+                renderFileTree(fileSystem, fileTreeContainer);
+                selectedFileNameSpan.textContent = 'No file selected';
+            };
+
+            const toggleFolder = (id) => {
+                const folder = findItemById(id);
+                if (folder && folder.type === 'folder') {
+                    folder.isExpanded = !folder.isExpanded;
+                    renderFileTree(fileSystem, fileTreeContainer);
+                    if (selectedItem && selectedItem.id === id) {
+                        selectItem(id);
+                    }
+                }
+            };
+
+            let renamingElement = null;
+            const startRename = (id) => {
+                const itemElement = document.querySelector(`[data-id="${id}"]`);
+                if (!itemElement || findItemById(id).isWelcome) return;
+
+                const nameSpan = itemElement.querySelector('span.flex-grow');
+                if (!nameSpan) return;
+
+                renamingElement = nameSpan;
+                const originalName = nameSpan.textContent;
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = originalName;
+                // Changed bg to gray-900 for consistency
+                input.classList.add('bg-gray-900', 'text-gray-200', 'rounded-sm', 'px-1', 'py-0.5', 'text-sm', 'flex-grow'); 
+                input.style.width = `${nameSpan.offsetWidth + 10}px`;
+                input.style.minWidth = '50px';
+
+                nameSpan.replaceWith(input);
+                input.focus();
+                input.select();
+
+                const finishRename = () => {
+                    if (!renamingElement) return;
+
+                    const newName = input.value.trim();
+                    const item = findItemById(id);
+                    if (item && newName !== '') {
+                        item.name = newName;
+                        const tabElement = document.querySelector(`.file-tab[data-id="${item.id}"] span`);
+                        if (tabElement) {
+                            tabElement.textContent = newName;
+                        }
+                    }
+                    renderFileTree(fileSystem, fileTreeContainer);
+                    selectItem(id);
+                    renamingElement = null;
+                };
+
+                input.addEventListener('blur', finishRename);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        input.blur();
+                    } else if (e.key === 'Escape') {
+                        if (renamingElement) {
+                            input.value = originalName;
+                            input.blur();
+                        }
+                    }
+                });
+            };
+
+            const openFileInEditor = (fileId) => {
+                const file = findItemById(fileId);
+                if (!file || file.type !== 'file') return;
+
+                // Save current editor content to the previously active file
+                if (activeFileId && window.editor) {
+                    const prevActiveFile = findItemById(activeFileId);
+                    if (prevActiveFile && prevActiveFile.type === 'file' && !prevActiveFile.isWelcome) {
+                        prevActiveFile.content = window.editor.getValue();
+                    }
+                }
+
+                // Hide welcome screen and default background
+                welcomeScreen.classList.add('hidden');
+                defaultBackgroundImage.classList.add('hidden');
+
+                // Check if tab already exists
+                let tabElement = document.querySelector(`#file-tabs-scroll-area .file-tab[data-id="${fileId}"]`);
+                if (!tabElement) {
+                    tabElement = document.createElement('div');
+                    // Changed hover background to gray-900
+                    tabElement.classList.add('file-tab', 'flex', 'items-center', 'px-4', 'py-2', 'border-r', 'border-gray-700', 'text-gray-400', 'cursor-pointer', 'hover:bg-gray-900'); 
+                    tabElement.dataset.id = file.id;
+
+                    const fileNameSpan = document.createElement('span');
+                    fileNameSpan.classList.add('mr-2');
+                    fileNameSpan.textContent = file.name;
+
+                    const closeIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    closeIcon.classList.add('w-3', 'h-3', 'text-gray-400', 'hover:text-white', 'close-tab-icon');
+                    closeIcon.setAttribute('fill', 'none');
+                    closeIcon.setAttribute('stroke', 'currentColor');
+                    closeIcon.setAttribute('viewBox', '0 0 24 24');
+                    closeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+                    closeIcon.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        closeFileTab(file.id);
+                    });
+
+                    tabElement.append(fileNameSpan, closeIcon);
+                    fileTabsScrollArea.appendChild(tabElement); // Append to the scroll area
+                    openFiles.push(file.id);
+                }
+
+                document.querySelectorAll('#file-tabs-scroll-area .file-tab').forEach(tab => {
+                    // Changed active tab background to gray-900
+                    tab.classList.remove('bg-gray-900', 'text-indigo-400'); 
+                    tab.classList.add('text-gray-400');
+                });
+
+                // Changed active tab background to gray-900
+                tabElement.classList.add('bg-gray-900', 'text-indigo-400'); 
+                tabElement.classList.remove('text-gray-400');
+                
+                tabElement.onclick = () => openFileInEditor(fileId);
+
+                if (window.editor) {
+                    if (file.isWelcome) {
+                        monacoEditorContainer.classList.add('hidden'); // Hide Monaco
+                        welcomeScreen.classList.remove('hidden'); // Show welcome UI
+                    } else {
+                        monacoEditorContainer.classList.remove('hidden'); // Show Monaco
+                        welcomeScreen.classList.add('hidden'); // Hide welcome UI
+                        window.editor.setValue(file.content);
+                        window.editor.updateOptions({ readOnly: false }); // Make editable
+                        // Ensure file.name is a string before calling split
+                        const fileName = String(file.name || ''); // Explicitly convert to string
+                        const fileExtension = fileName.split('.').pop();
+                        let language = 'plaintext';
+                        switch (fileExtension) {
+                            case 'js': language = 'javascript'; break;
+                            case 'ts': language = 'typescript'; break;
+                            case 'html': language = 'html'; break;
+                            case 'css': language = 'css'; break;
+                            case 'py': language = 'python'; break;
+                            case 'md': language = 'markdown'; break;
+                            case 'json': language = 'json'; break; // Added JSON
+                        }
+                        monaco.editor.setModelLanguage(window.editor.getModel(), language);
+                    }
+                    window.editor.layout(); // Recalculate layout after visibility change
+                }
+                activeFileId = fileId;
+                selectedFileNameSpan.textContent = file.name; // Update bottom bar
+            };
+
+            const closeFileTab = (fileId) => {
+                const tabElement = document.querySelector(`#file-tabs-scroll-area .file-tab[data-id="${fileId}"]`);
+                if (tabElement) {
+                    if (activeFileId === fileId && window.editor) {
+                        const closedFile = findItemById(fileId);
+                        if (closedFile && !closedFile.isWelcome) {
+                            closedFile.content = window.editor.getValue();
+                        }
+                    }
+
+                    tabElement.remove();
+                    openFiles = openFiles.filter(id => id !== fileId);
+
+                    if (fileId === welcomeFile.id) {
+                        sessionStorage.setItem('welcomeScreenClosed', 'true');
+                    }
+
+                    if (activeFileId === fileId) {
+                        if (openFiles.length > 0) {
+                            openFileInEditor(openFiles[openFiles.length - 1]);
+                        } else {
+                            showDefaultEditorView();
+                        }
+                    }
+                }
+            };
+
+            const showDefaultEditorView = () => {
+                monacoEditorContainer.classList.add('hidden');
+                welcomeScreen.classList.add('hidden');
+                defaultBackgroundImage.classList.add('hidden');
+                
+                if (openFiles.length === 0) {
+                    if (sessionStorage.getItem('welcomeScreenClosed') === 'true') {
+                        defaultBackgroundImage.classList.remove('hidden');
+                    } else {
+                        welcomeScreen.classList.remove('hidden');
+                        // Add welcome tab if not already open
+                        if (!openFiles.includes(welcomeFile.id)) {
+                            openFiles.push(welcomeFile.id);
+                            // Manually create and add the welcome tab
+                            const tabElement = document.createElement('div');
+                            // Changed hover background to gray-900
+                            tabElement.classList.add('file-tab', 'flex', 'items-center', 'px-4', 'py-2', 'border-r', 'border-gray-700', 'text-gray-400', 'cursor-pointer', 'hover:bg-gray-900'); 
+                            tabElement.dataset.id = welcomeFile.id;
+
+                            const fileNameSpan = document.createElement('span');
+                            fileNameSpan.classList.add('mr-2');
+                            fileNameSpan.textContent = welcomeFile.name;
+
+                            const closeIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                            closeIcon.classList.add('w-3', 'h-3', 'text-gray-400', 'hover:text-white', 'close-tab-icon');
+                            closeIcon.setAttribute('fill', 'none');
+                            closeIcon.setAttribute('stroke', 'currentColor');
+                            closeIcon.setAttribute('viewBox', '0 0 24 24');
+                            closeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+                            closeIcon.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                closeFileTab(welcomeFile.id);
+                            });
+
+                            tabElement.append(fileNameSpan, closeIcon);
+                            fileTabsScrollArea.appendChild(tabElement); // Append to the scroll area
+
+                            // Activate the welcome tab
+                            document.querySelectorAll('#file-tabs-scroll-area .file-tab').forEach(tab => {
+                                // Changed active tab background to gray-900
+                                tab.classList.remove('bg-gray-900', 'text-indigo-400'); 
+                                tab.classList.add('text-gray-400');
+                            });
+                            // Changed active tab background to gray-900
+                            tabElement.classList.add('bg-gray-900', 'text-indigo-400'); 
+                            tabElement.classList.remove('text-gray-400');
+                            tabElement.onclick = () => openFileInEditor(welcomeFile.id);
+                            activeFileId = welcomeFile.id;
+                            selectedFileNameSpan.textContent = welcomeFile.name;
+                        }
+                    }
+                }
+                if (window.editor) {
+                    window.editor.layout();
+                }
+                if (openFiles.length === 0) { // Only reset if no files are truly open
+                    selectedFileNameSpan.textContent = 'No file selected';
+                    lineColDisplay.textContent = 'Ln 1, Col 1';
+                }
+            };
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'F2' && selectedItem && !renamingElement) {
+                    e.preventDefault();
+                    startRename(selectedItem.id);
+                }
+            });
+
+            addFolderIcon.addEventListener('click', () => addFolder('New Folder'));
+            addFileIcon.addEventListener('click', () => addFile('New File.txt')); // Pass a default file name
+
+            deleteItemIcon.addEventListener('click', deleteItem);
+
+            projectToggleArrow.addEventListener('click', () => {
+                const isHidden = fileTreeContainer.classList.toggle('hidden');
+                if (isHidden) {
+                    projectToggleArrow.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>';
+                } else {
+                    projectToggleArrow.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>';
+                }
+            });
+
+            // Initial file system is empty
+            fileSystem = [];
+            renderFileTree(fileSystem, fileTreeContainer);
+
+            // Terminal/Output Panel Logic
+            const terminalTabsContainer = document.getElementById('terminal-tabs-container');
+            const terminalTabs = terminalTabsContainer.querySelectorAll('div');
+
+            const bottomPanelContainer = document.getElementById('bottom-panel-container');
+            const terminalOutputPackagesContent = document.getElementById('terminal-output-packages-content');
+
+            const terminalContent = document.getElementById('terminal-content');
+            const outputContent = document.getElementById('output-content');
+            const packagesContent = document.getElementById('packages-content');
+
+            const contentMap = {
+                'Terminal': terminalContent,
+                'Output': outputContent,
+                'Packages': packagesContent
+            };
+
+            terminalTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Changed active tab background to gray-900
+                    terminalTabs.forEach(t => t.classList.remove('bg-gray-900', 'text-gray-200')); 
+                    // Changed active tab background to gray-900
+                    tab.classList.add('bg-gray-900', 'text-gray-200'); 
+
+                    Object.values(contentMap).forEach(content => content.classList.add('hidden'));
+
+                    const tabNameElement = tab.querySelector('span');
+                    const tabName = tabNameElement ? tabNameElement.textContent.trim() : tab.textContent.trim();
+
+                    if (contentMap[tabName]) {
+                        contentMap[tabName].classList.remove('hidden');
+                    }
+                });
+            });
+
+            // Changed initial active tab background to gray-900
+            terminalTabs[0].classList.add('bg-gray-900', 'text-gray-200'); 
+            terminalContent.classList.remove('hidden');
+
+            const minusIconContainer = document.getElementById('minus-icon-container');
+            const terminalBottomBarIcon = document.getElementById('terminal-bottom-bar-icon');
+
+            const toggleTerminalPanel = () => {
+                bottomPanelContainer.classList.toggle('hidden');
+                if (window.editor) {
+                    window.editor.layout();
+                }
+            };
+
+            minusIconContainer.addEventListener('click', toggleTerminalPanel);
+            terminalBottomBarIcon.addEventListener('click', toggleTerminalPanel);
+
+
+            const chatSidebar = document.getElementById('chat-sidebar');
+            const aiIcon = document.getElementById('ai-icon');
+
+            aiIcon.addEventListener('click', () => {
+                chatSidebar.classList.toggle('hidden');
+            });
+
+            // Event listener for closing the welcome screen explicitly
+            closeWelcomeScreenButton.addEventListener('click', () => {
+                closeFileTab(welcomeFile.id); // Close the welcome tab
+                showDefaultEditorView(); // Show the default background
+            });
+
+
+            require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.29.1/min/vs' }});
+            require(['vs/editor/editor.main'], function () {
+                window.editor = monaco.editor.create(monacoEditorContainer, {
+                    value: '',
+                    language: 'plaintext',
+                    theme: 'vs-dark',
+                    readOnly: false
+                });
+
+                const updateLineCol = () => {
+                    if (window.editor && !monacoEditorContainer.classList.contains('hidden')) {
+                        const position = window.editor.getPosition();
+                        if (position) {
+                            lineColDisplay.textContent = `Ln ${position.lineNumber}, Col ${position.column}`;
+                        }
+                    } else {
+                        lineColDisplay.textContent = 'Ln 1, Col 1';
+                    }
+                };
+
+                updateLineCol();
+
+                window.editor.onDidChangeCursorPosition((e) => {
+                    updateLineCol();
+                });
+
+                window.editor.onDidChangeModelContent(() => {
+                    updateLineCol();
+                });
+
+                window.addEventListener('resize', () => {
+                    if (window.editor) {
+                        window.editor.layout();
+                    }
+                });
+
+                // --- Drag and Drop Folder/File Handling ---
+                const processDroppedEntry = async (entry, targetFolder) => {
+                    return new Promise((resolve) => {
+                        if (entry.isFile) {
+                            entry.file((file) => {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                    const newFile = {
+                                        id: generateUniqueId(),
+                                        name: file.name,
+                                        type: 'file',
+                                        content: event.target.result
+                                    };
+                                    if (targetFolder) {
+                                        targetFolder.children.push(newFile);
+                                    } else {
+                                        fileSystem.push(newFile);
+                                    }
+                                    resolve();
+                                };
+                                reader.onerror = () => {
+                                    console.error('Error reading file:', file.name);
+                                    resolve(); // Resolve even on error to continue processing others
+                                };
+                                reader.readAsText(file);
+                            });
+                        } else if (entry.isDirectory) {
+                            const newFolder = {
+                                id: generateUniqueId(),
+                                name: entry.name,
+                                type: 'folder',
+                                children: [],
+                                isExpanded: true
+                            };
+                            if (targetFolder) {
+                                targetFolder.children.push(newFolder);
+                            } else {
+                                fileSystem.push(newFolder);
+                            }
+
+                            const directoryReader = entry.createReader();
+                            directoryReader.readEntries(async (entries) => {
+                                const promises = entries.map(childEntry => processDroppedEntry(childEntry, newFolder));
+                                await Promise.all(promises);
+                                resolve();
+                            });
+                        } else {
+                            resolve(); // Not a file or directory, resolve immediately
+                        }
+                    });
+                };
+
+                // Apply drag and drop listeners to the entire file explorer nav
+                fileExplorerNav.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileExplorerNav.classList.add('drag-over'); // Apply drag-over to the nav
+                });
+
+                fileExplorerNav.addEventListener('dragleave', (e) => {
+                    fileExplorerNav.classList.remove('drag-over'); // Remove drag-over from the nav
+                });
+
+                fileExplorerNav.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    fileExplorerNav.classList.remove('drag-over'); // Remove drag-over from the nav
+
+                    const items = e.dataTransfer.items;
+                    if (items && items.length > 0) {
+                        const rootPromises = [];
+                        for (let i = 0; i < items.length; i++) {
+                            const item = items[i];
+                            if (item.webkitGetAsEntry) { // Check for webkitGetAsEntry support
+                                const entry = item.webkitGetAsEntry();
+                                if (entry) {
+                                    rootPromises.push(processDroppedEntry(entry, null)); // Pass null for root items
+                                }
+                            }
+                        }
+                        await Promise.all(rootPromises);
+                        renderFileTree(fileSystem, fileTreeContainer);
+                        // Optionally, open the first dropped file or the first file in the first dropped folder
+                        if (fileSystem.length > 0 && fileSystem[0].type === 'file') {
+                            openFileInEditor(fileSystem[0].id);
+                        } else if (fileSystem.length > 0 && fileSystem[0].type === 'folder' && fileSystem[0].children.length > 0) {
+                             // Try to open the first file in the first folder
+                            const firstFileInFolder = fileSystem[0].children.find(child => child.type === 'file');
+                            if (firstFileInFolder) {
+                                openFileInEditor(firstFileInFolder.id);
+                            }
+                        }
+                    }
+                });
+
+                // Initial setup: show welcome screen or default view
+                if (sessionStorage.getItem('welcomeScreenClosed') === 'true' || openFiles.length > 0) {
+                    showDefaultEditorView();
+                } else {
+                    openFileInEditor(welcomeFile.id); // Open welcome screen as a tab
+                }
+            });
+        });
+    </script>
+</body>
+</html>
